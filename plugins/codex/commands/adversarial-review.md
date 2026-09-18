@@ -39,10 +39,10 @@ Argument handling:
 - Do not strip `--wait` or `--background` yourself.
 - Do not weaken the adversarial framing or rewrite the user's focus text.
 - The companion script parses `--wait` and `--background`, but Claude Code's `Bash(..., run_in_background: true)` is what actually detaches the run.
-- `/codex:adversarial-review` uses the same review target selection as `/codex:review`.
+- `/ollama:adversarial-review` uses the same review target selection as `/ollama:review`.
 - It supports working-tree review, branch review, and `--base <ref>`.
 - It does not support `--scope staged` or `--scope unstaged`.
-- Unlike `/codex:review`, it can still take extra focus text after the flags.
+- Unlike `/ollama:review`, it can still take extra focus text after the flags.
 
 Foreground flow:
 - Run:
@@ -63,4 +63,6 @@ Bash({
 })
 ```
 - Do not call `BashOutput` or wait for completion in this turn.
-- After launching the command, tell the user: "Codex adversarial review started in the background. Check `/codex:status` for progress."
+- After launching the command, tell the user: "Codex adversarial review started in the background. Check `/ollama:status` for progress."
+
+<!-- Modified for ollama-plugin-cc (2026): routed to a local Ollama model. Original work Copyright 2026 OpenAI, Apache-2.0. -->

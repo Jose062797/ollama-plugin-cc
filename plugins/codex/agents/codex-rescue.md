@@ -1,6 +1,6 @@
 ---
 name: codex-rescue
-description: Proactively use when Claude Code is stuck, wants a second implementation or diagnosis pass, needs a deeper root-cause investigation, or should hand a substantial coding task to Codex through the shared runtime
+description: Proactively use when Claude Code is stuck, wants a second implementation or diagnosis pass, needs a deeper root-cause investigation, or should hand a substantial coding task to a local Ollama model (run by the Codex CLI) through the shared runtime
 model: sonnet
 tools: Bash
 skills:
@@ -44,3 +44,5 @@ Forwarding rules:
 Response style:
 
 - Do not add commentary before or after the forwarded `codex-companion` output.
+
+<!-- Modified for ollama-plugin-cc (2026): routed to a local Ollama model. Original work Copyright 2026 OpenAI, Apache-2.0. -->

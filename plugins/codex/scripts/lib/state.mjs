@@ -1,3 +1,4 @@
+// Modified for ollama-plugin-cc (2026): routed to a local Ollama model. Original work Copyright 2026 OpenAI, Apache-2.0.
 import { createHash } from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
@@ -7,7 +8,7 @@ import { resolveWorkspaceRoot } from "./workspace.mjs";
 
 const STATE_VERSION = 1;
 const PLUGIN_DATA_ENV = "CLAUDE_PLUGIN_DATA";
-const FALLBACK_STATE_ROOT_DIR = path.join(os.tmpdir(), "codex-companion");
+const FALLBACK_STATE_ROOT_DIR = path.join(os.tmpdir(), "ollama-companion");
 const STATE_FILE_NAME = "state.json";
 const JOBS_DIR_NAME = "jobs";
 const MAX_JOBS = 50;

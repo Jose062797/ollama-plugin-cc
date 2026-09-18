@@ -6,7 +6,7 @@ user-invocable: false
 
 # GPT-5.4 Prompting
 
-Use this skill when `codex:codex-rescue` needs to ask Codex or another GPT-5.4-based workflow for help.
+Use this skill when `ollama:codex-rescue` needs to ask Codex or another GPT-5.4-based workflow for help.
 
 Prompt Codex like an operator, not a collaborator. Keep prompts compact and block-structured with XML tags. State the task, the output contract, the follow-through defaults, and the small set of extra constraints that matter.
 
@@ -52,3 +52,5 @@ Prompt assembly checklist:
 Reusable blocks live in [references/prompt-blocks.md](references/prompt-blocks.md).
 Concrete end-to-end templates live in [references/codex-prompt-recipes.md](references/codex-prompt-recipes.md).
 Common failure modes to avoid live in [references/codex-prompt-antipatterns.md](references/codex-prompt-antipatterns.md).
+
+<!-- Modified for ollama-plugin-cc (2026): routed to a local Ollama model. Original work Copyright 2026 OpenAI, Apache-2.0. -->

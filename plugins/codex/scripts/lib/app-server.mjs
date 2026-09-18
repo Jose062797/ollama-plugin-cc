@@ -1,3 +1,4 @@
+// Modified for ollama-plugin-cc (2026): routed to a local Ollama model. Original work Copyright 2026 OpenAI, Apache-2.0.
 /**
  * @typedef {Error & { data?: unknown, rpcCode?: number }} ProtocolError
  * @typedef {import("./app-server-protocol").AppServerMethod} AppServerMethod
@@ -180,6 +181,27 @@ class AppServerClientBase {
   }
 }
 
+
+// ollama-plugin-cc: start Codex against a local provider instead of OpenAI.
+// `ollama` and `lmstudio` are providers built into the Codex CLI. Override with
+// OLLAMA_PLUGIN_CC_PROVIDER / OLLAMA_PLUGIN_CC_MODEL. Values are validated because
+// on Windows the command line is assembled by a shell.
+const SAFE_PROVIDER_VALUE = /^[A-Za-z0-9._:\/-]+$/;
+
+function readProviderSetting(name, fallback) {
+  const value = (process.env[name] ?? "").trim() || fallback;
+  if (!SAFE_PROVIDER_VALUE.test(value)) {
+    throw new Error(`${name} contains unsupported characters: ${value}`);
+  }
+  return value;
+}
+
+export function buildProviderArgs() {
+  const provider = readProviderSetting("OLLAMA_PLUGIN_CC_PROVIDER", "ollama");
+  const model = readProviderSetting("OLLAMA_PLUGIN_CC_MODEL", "gpt-oss:20b");
+  return ["-c", `model_provider=${provider}`, "-c", `model=${model}`];
+}
+
 class SpawnedCodexAppServerClient extends AppServerClientBase {
   constructor(cwd, options = {}) {
     super(cwd, options);
@@ -187,7 +209,7 @@ class SpawnedCodexAppServerClient extends AppServerClientBase {
   }
 
   async initialize() {
-    this.proc = spawn("codex", ["app-server"], {
+    this.proc = spawn("codex", [...buildProviderArgs(), "app-server"], {
       cwd: this.cwd,
       env: this.options.env ?? process.env,
       stdio: ["pipe", "pipe", "pipe"],

@@ -1,19 +1,19 @@
 {
-  "name": "openai-codex",
+  "name": "ollama-plugin-cc",
   "owner": {
-    "name": "OpenAI"
+    "name": "Jose Aguilar"
   },
   "metadata": {
-    "description": "Codex plugins to use in Claude Code for delegation and code review.",
-    "version": "1.0.6"
+    "description": "Unofficial fork of OpenAI's Codex plugin for Claude Code, routed to local Ollama models.",
+    "version": "1.0.6-ollama.1"
   },
   "plugins": [
     {
-      "name": "codex",
-      "description": "Use Codex from Claude Code to review code or delegate tasks.",
-      "version": "1.0.6",
+      "name": "ollama",
+      "description": "Use a local Ollama model from Claude Code to review code or delegate tasks.",
+      "version": "1.0.6-ollama.1",
       "author": {
-        "name": "OpenAI"
+        "name": "Jose Aguilar (fork of the Codex plugin by OpenAI)"
       },
       "source": "./plugins/codex"
     }

@@ -3,7 +3,7 @@ Run a stop-gate review of the previous Claude turn.
 Only review the work from the previous Claude turn.
 Only review it if Claude actually did code changes in that turn.
 Pure status, setup, or reporting output does not count as reviewable work.
-For example, the output of /codex:setup or /codex:status does not count.
+For example, the output of /ollama:setup or /ollama:status does not count.
 Only direct edits made in that specific turn count.
 If the previous Claude turn was only a status update, a summary, a setup/login check, a review result, or output from a command that did not itself make direct edits in that turn, return ALLOW immediately and do no further work.
 Challenge whether that specific work and its design choices should ship.
@@ -34,3 +34,5 @@ Do not block based on older edits from earlier turns when the immediately previo
 <dig_deeper_nudge>
 If the previous turn did make code changes, check for second-order failures, empty-state behavior, retries, stale state, rollback risk, and design tradeoffs before you finalize.
 </dig_deeper_nudge>
+
+<!-- Modified for ollama-plugin-cc (2026): routed to a local Ollama model. Original work Copyright 2026 OpenAI, Apache-2.0. -->

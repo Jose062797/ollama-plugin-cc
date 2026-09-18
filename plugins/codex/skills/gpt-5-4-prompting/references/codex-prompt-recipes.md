@@ -2,7 +2,7 @@
 
 Use these as starting templates for Codex task prompts or other Codex/GPT-5.4 prompt construction.
 Copy the smallest recipe that fits the task, then trim anything you do not need.
-In `codex:codex-rescue`, run diagnosis and fix-oriented recipes in write mode by default unless the user explicitly asked for read-only behavior.
+In `ollama:codex-rescue`, run diagnosis and fix-oriented recipes in write mode by default unless the user explicitly asked for read-only behavior.
 
 ## Diagnosis
 
@@ -148,3 +148,5 @@ Do not invent failure modes that are not supported by the examples.
 Before finalizing, make sure the revised prompt resolves the cited failure modes without adding contradictory instructions.
 </verification_loop>
 ```
+
+<!-- Modified for ollama-plugin-cc (2026): routed to a local Ollama model. Original work Copyright 2026 OpenAI, Apache-2.0. -->

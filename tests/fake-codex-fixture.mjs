@@ -1,3 +1,4 @@
+// Modified for ollama-plugin-cc (2026): routed to a local Ollama model. Original work Copyright 2026 OpenAI, Apache-2.0.
 import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
@@ -248,6 +249,9 @@ function taskPayload(prompt, resume) {
 }
 
 const args = process.argv.slice(2);
+while (args[0] === "-c") {
+  args.splice(0, 2); // ollama-plugin-cc: provider overrides precede the subcommand
+}
 if (args[0] === "--version") {
   console.log("codex-cli test");
   process.exit(0);

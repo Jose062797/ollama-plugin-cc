@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// Modified for ollama-plugin-cc (2026): routed to a local Ollama model. Original work Copyright 2026 OpenAI, Apache-2.0.
 import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
@@ -132,7 +133,7 @@ function requireObject(value, label) {
 }
 
 function findMarketplacePlugin(json) {
-  const plugin = json.plugins?.find((entry) => entry?.name === "codex");
+  const plugin = json.plugins?.find((entry) => entry?.name === "ollama" || entry?.name === "codex");
   requireObject(plugin, ".claude-plugin/marketplace.json plugins[codex]");
   return plugin;
 }
