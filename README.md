@@ -109,9 +109,13 @@ npm test
 
 The patch script is idempotent and stops with an error if upstream changed one of the lines it edits. If `README.md` conflicts, keep this file and copy upstream's version to `docs/UPSTREAM_README.md`.
 
-Upstream is developed on macOS and Linux. On Windows, 13 of its 91 tests fail on the untouched upstream code (Unix sockets, symlinks, temp paths and process cleanup), and exactly the same 13 fail after the patch, which is the acceptance rule used here: no new failures.
+The acceptance rule is: no new test failures compared with untouched upstream. Upstream is developed on macOS and Linux; on Windows 11 with Node 24, 12 of its 91 tests fail on the untouched upstream code (Unix sockets, symlinks, process cleanup, native session transfer), and exactly the same 12 fail after the patch.
 
-Also on Windows, the test suite does not clean up after itself: each run leaves about 60 `node.exe` processes (brokers and fake Codex servers) and their temp directories behind. After `npm test`, end the `node.exe` processes whose command line contains `app-server-broker.mjs` or `codex-plugin-test-`. Normal use of the plugin is not affected: its session-end hook shuts the broker down.
+Run the tests from a plain terminal, not from inside a Claude Code session. Claude Code sets `CLAUDE_PLUGIN_DATA` for its plugins; the tests inherit it, write their state into that plugin's data folder, and one more test fails. If you must run them there, unset it first (`env -u CLAUDE_PLUGIN_DATA npm test` in a POSIX shell).
+
+On Windows the test suite also leaves about 60 `node.exe` processes (brokers and fake Codex servers) and their temp directories behind on every run. Afterwards, end the `node.exe` processes whose command line contains `app-server-broker.mjs` or `codex-plugin-test-`.
+
+One upstream behaviour worth knowing in normal use, which affects the official plugin equally: the plugin waits two seconds for its broker to start. If the broker is slower, the task still runs, but the broker and its `codex app-server` are left running and untracked, so the session-end hook does not stop them. On a slower Windows machine this can happen on the first task of a session. The broker's command line contains `app-server-broker.mjs`. Before ending a `codex app-server` process, check that its parent is that broker or a shell it started: the Codex desktop app runs its own `codex app-server`.
 
 ## License
 
