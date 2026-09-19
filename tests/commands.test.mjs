@@ -89,7 +89,7 @@ test("rescue command absorbs continue semantics", () => {
   const rescue = read("commands/rescue.md");
   const agent = read("agents/codex-rescue.md");
   const readme = fs.readFileSync(path.join(ROOT, "docs", "UPSTREAM_README.md"), "utf8");
-  const runtimeSkill = read("skills/codex-cli-runtime/SKILL.md");
+  const runtimeSkill = read("skills/ollama-cli-runtime/SKILL.md");
 
   assert.match(rescue, /The final user-visible response must be Codex's output verbatim/i);
   assert.match(rescue, /allowed-tools:\s*Bash\(node:\*\),\s*AskUserQuestion,\s*Agent/);
@@ -139,12 +139,12 @@ test("rescue command absorbs continue semantics", () => {
   assert.match(agent, /If the user asks for a concrete model name such as `gpt-5\.4-mini`, pass it through with `--model`/i);
   assert.match(agent, /Return the stdout of the `codex-companion` command exactly as-is/i);
   assert.match(agent, /If the Bash call fails or Codex cannot be invoked, return nothing/i);
-  assert.match(agent, /gpt-5-4-prompting/);
+  assert.match(agent, /ollama-prompting/);
   assert.match(agent, /only to tighten the user's request into a better Codex prompt/i);
   assert.match(agent, /Do not use that skill to inspect the repository, reason through the problem yourself, draft a solution, or do any independent work/i);
   assert.match(runtimeSkill, /only job is to invoke `task` once and return that stdout unchanged/i);
   assert.match(runtimeSkill, /Do not call `setup`, `review`, `adversarial-review`, `status`, `result`, or `cancel`/i);
-  assert.match(runtimeSkill, /use the `gpt-5-4-prompting` skill to rewrite the user's request into a tighter Codex prompt/i);
+  assert.match(runtimeSkill, /use the `ollama-prompting` skill to rewrite the user's request into a tighter Codex prompt/i);
   assert.match(runtimeSkill, /That prompt drafting is the only Claude-side work allowed/i);
   assert.match(runtimeSkill, /Leave `--effort` unset unless the user explicitly requests a specific effort/i);
   assert.match(runtimeSkill, /Leave model unset by default/i);
@@ -175,7 +175,7 @@ test("transfer, result, and cancel commands are exposed as deterministic runtime
   const transfer = read("commands/transfer.md");
   const result = read("commands/result.md");
   const cancel = read("commands/cancel.md");
-  const resultHandling = read("skills/codex-result-handling/SKILL.md");
+  const resultHandling = read("skills/ollama-result-handling/SKILL.md");
 
   assert.match(transfer, /disable-model-invocation:\s*true/);
   assert.match(transfer, /codex-companion\.mjs" transfer "\$ARGUMENTS"/);
@@ -189,9 +189,9 @@ test("transfer, result, and cancel commands are exposed as deterministic runtime
 });
 
 test("internal docs use task terminology for rescue runs", () => {
-  const runtimeSkill = read("skills/codex-cli-runtime/SKILL.md");
-  const promptingSkill = read("skills/gpt-5-4-prompting/SKILL.md");
-  const promptRecipes = read("skills/gpt-5-4-prompting/references/codex-prompt-recipes.md");
+  const runtimeSkill = read("skills/ollama-cli-runtime/SKILL.md");
+  const promptingSkill = read("skills/ollama-prompting/SKILL.md");
+  const promptRecipes = read("skills/ollama-prompting/references/codex-prompt-recipes.md");
 
   assert.match(runtimeSkill, /codex-companion\.mjs" task "<raw arguments>"/);
   assert.match(runtimeSkill, /Use `task` for every rescue request/i);

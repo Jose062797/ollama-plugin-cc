@@ -8,6 +8,7 @@
 // after every merge from upstream:
 //
 //   1. rename   the slash-command and subagent namespace  codex: -> ollama:
+//   1b. skills  unique names for the three internal skills (they collide by bare name otherwise)
 //   2. provider start `codex app-server` with `-c model_provider=... -c model=...`
 //   3. state    use a separate temp fallback directory
 //   4. fixture  let the fake codex used by the tests accept the leading -c pairs
@@ -38,8 +39,48 @@ const NOTICE_MARK = "Modified for ollama-plugin-cc";
 const COMMANDS = ["codex-rescue", "adversarial-review", "rescue", "review", "status", "result", "cancel", "setup", "transfer"];
 const NAMESPACE_RE = new RegExp(`\\bcodex:(?=(?:${COMMANDS.join("|")})\\b)`, "g");
 
+// Claude Code resolves the `skills:` list of a subagent by bare skill name. When this
+// fork is installed next to the official plugin, identical names make the subagent load
+// the OFFICIAL skills (which point at the OpenAI companion script), so the forwarder sees
+// contradictory instructions and refuses the local path. Unique names fix that.
+const SKILL_RENAMES = [
+  ["codex-cli-runtime", "ollama-cli-runtime"],
+  ["codex-result-handling", "ollama-result-handling"],
+  ["gpt-5-4-prompting", "ollama-prompting"]
+];
+const SKILLS_DIR = path.join(ROOT, PLUGIN_DIR, "skills");
+
 const changed = [];
 const problems = [];
+const pendingDirRenames = [];
+
+for (const [from, to] of SKILL_RENAMES) {
+  const oldDir = path.join(SKILLS_DIR, from);
+  const newDir = path.join(SKILLS_DIR, to);
+  if (fs.existsSync(oldDir) && fs.existsSync(newDir)) {
+    problems.push(`skills: both ${from}/ and ${to}/ exist; merge them by hand`);
+  } else if (fs.existsSync(oldDir)) {
+    pendingDirRenames.push([oldDir, newDir]);
+  }
+}
+
+/** Where a file will live once the pending skill directory renames are applied. */
+function finalPath(file) {
+  for (const [oldDir, newDir] of pendingDirRenames) {
+    if (file === oldDir || file.startsWith(oldDir + path.sep)) {
+      return newDir + file.slice(oldDir.length);
+    }
+  }
+  return file;
+}
+
+function renameSkillTokens(text) {
+  let out = text;
+  for (const [from, to] of SKILL_RENAMES) {
+    out = out.split(from).join(to);
+  }
+  return out;
+}
 
 function rel(file) {
   return path.relative(ROOT, file).split(path.sep).join("/");
@@ -57,8 +98,8 @@ function write(file, before, after) {
   if (before === after) {
     return;
   }
-  changed.push(rel(file));
-  pendingWrites.set(file, after);
+  changed.push(rel(finalPath(file)));
+  pendingWrites.set(finalPath(file), after);
 }
 
 function walk(dir, out = []) {
@@ -132,7 +173,7 @@ function current(file) {
 }
 
 for (const file of renameTargets) {
-  edits.set(file, current(file).replace(NAMESPACE_RE, "ollama:"));
+  edits.set(file, renameSkillTokens(current(file).replace(NAMESPACE_RE, "ollama:")));
 }
 
 // ---------------------------------------------------------------- 2. provider
@@ -317,7 +358,14 @@ if (problems.length > 0) {
   process.exit(2);
 }
 
+for (const [oldDir, newDir] of pendingDirRenames) {
+  changed.push(`${rel(oldDir)}/ -> ${rel(newDir)}/`);
+}
+
 if (!CHECK_ONLY) {
+  for (const [oldDir, newDir] of pendingDirRenames) {
+    fs.renameSync(oldDir, newDir);
+  }
   for (const [file, text] of pendingWrites) {
     fs.writeFileSync(file, text, "utf8");
   }

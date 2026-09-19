@@ -20,10 +20,11 @@ Nothing else in the runtime changes: job tracking, the broker, hooks, prompts, s
 | Files | Change |
 |---|---|
 | Every `.md` and `.mjs` file under `plugins/codex/`, `tests/` and `docs/` that mentions them | The slash-command and subagent namespace `codex:` becomes `ollama:` for `rescue`, `review`, `adversarial-review`, `status`, `result`, `cancel`, `setup`, `transfer` and the `codex-rescue` subagent. |
+| `plugins/codex/skills/*`, `plugins/codex/agents/codex-rescue.md`, `tests/commands.test.mjs` | The three internal skills are renamed: `codex-cli-runtime` to `ollama-cli-runtime`, `codex-result-handling` to `ollama-result-handling`, `gpt-5-4-prompting` to `ollama-prompting` (directories, `name:` fields and references). Claude Code resolves a subagent's preloaded `skills:` by bare name, so with both plugins installed the forwarder loaded the official skills, which point at the OpenAI companion script, saw contradictory instructions and refused the local path. Found in the first real `/ollama:rescue` run; fixed in 1.0.6-ollama.2. |
 | `plugins/codex/agents/codex-rescue.md`, `plugins/codex/commands/rescue.md` | The description names the local Ollama backend. Without this, Claude would see two subagents with identical descriptions when both plugins are installed. |
 | `plugins/codex/.claude-plugin/plugin.json` | `name` is `ollama`; description and author updated. |
 | `.claude-plugin/marketplace.json` | Marketplace name `ollama-plugin-cc`; owner, description and plugin entry updated. |
-| `package.json`, `package-lock.json`, the two manifests above | Version `1.0.6-ollama.1`, set with upstream's own `scripts/bump-version.mjs`. |
+| `package.json`, `package-lock.json`, the two manifests above | Version `1.0.6-ollama.N`, set with upstream's own `scripts/bump-version.mjs`. |
 | `scripts/bump-version.mjs` | The marketplace entry is found under the name `ollama` as well as `codex`, so upstream's version tool and its tests both keep working. |
 
 The directory is still called `plugins/codex` and the subagent file `codex-rescue.md` on purpose: the Codex CLI is still the agent harness, and keeping upstream's paths makes merges clean.

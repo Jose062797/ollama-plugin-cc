@@ -87,7 +87,7 @@ To confirm that nothing leaves your machine, look at Ollama's server log while a
 The whole difference is produced by [`scripts/apply-ollama-patch.mjs`](scripts/apply-ollama-patch.mjs) and listed in [MODIFICATIONS.md](MODIFICATIONS.md). In short:
 
 1. `codex app-server` is started with `-c model_provider=ollama -c model=<model>`. The Codex CLI rejects `--profile` for `app-server`, so config overrides are the supported way. Upstream has open requests for the same capability ([#251](https://github.com/openai/codex-plugin-cc/issues/251), [#418](https://github.com/openai/codex-plugin-cc/issues/418), [#419](https://github.com/openai/codex-plugin-cc/pull/419)).
-2. The command and subagent namespace is `ollama:` instead of `codex:`, and two descriptions name the local backend so Claude can tell the two plugins apart.
+2. The command and subagent namespace is `ollama:` instead of `codex:`, two descriptions name the local backend, and the three internal skills have their own names (`ollama-cli-runtime`, `ollama-result-handling`, `ollama-prompting`). Claude Code resolves a subagent's preloaded skills by bare name, so identical names made the forwarder load the official plugin's skills when both were installed.
 3. The temporary fallback state directory has its own name.
 
 To audit it yourself:

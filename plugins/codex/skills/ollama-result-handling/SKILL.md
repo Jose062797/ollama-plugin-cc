@@ -1,5 +1,5 @@
 ---
-name: codex-result-handling
+name: ollama-result-handling
 description: Internal guidance for presenting Codex helper output back to the user
 user-invocable: false
 ---
