@@ -1,3 +1,4 @@
+// Modified for ollama-plugin-cc (2026): routed to a local Ollama model. Original work Copyright 2026 OpenAI, Apache-2.0.
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -25,7 +26,7 @@ export function run(command, args, options = {}) {
 
 export function initGitRepo(cwd) {
   run("git", ["init", "-b", "main"], { cwd });
-  run("git", ["config", "user.name", "Codex Plugin Tests"], { cwd });
+  run("git", ["config", "user.name", "Ollama Plugin Tests"], { cwd });
   run("git", ["config", "user.email", "tests@example.com"], { cwd });
   run("git", ["config", "commit.gpgsign", "false"], { cwd });
   run("git", ["config", "tag.gpgsign", "false"], { cwd });

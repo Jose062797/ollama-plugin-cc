@@ -2,7 +2,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { createBrokerEndpoint, parseBrokerEndpoint } from "../plugins/codex/scripts/lib/broker-endpoint.mjs";
+import { createBrokerEndpoint, parseBrokerEndpoint } from "../plugins/ollama/scripts/lib/broker-endpoint.mjs";
 
 test("createBrokerEndpoint uses Unix sockets on non-Windows platforms", () => {
   const endpoint = createBrokerEndpoint("/tmp/olc-12345", "darwin");

@@ -5,17 +5,17 @@
   },
   "metadata": {
     "description": "Unofficial fork of OpenAI's Codex plugin for Claude Code, routed to local Ollama models.",
-    "version": "1.0.6-ollama.3"
+    "version": "1.0.6-ollama.4"
   },
   "plugins": [
     {
       "name": "ollama",
       "description": "Use a local Ollama model from Claude Code to review code or delegate tasks.",
-      "version": "1.0.6-ollama.3",
+      "version": "1.0.6-ollama.4",
       "author": {
         "name": "Jose Aguilar (fork of the Codex plugin by OpenAI)"
       },
-      "source": "./plugins/codex"
+      "source": "./plugins/ollama"
     }
   ]
 }

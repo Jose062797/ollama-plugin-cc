@@ -1,9 +1,9 @@
 {
-  "name": "@openai/codex-plugin-cc",
-  "version": "1.0.6-ollama.3",
+  "name": "ollama-plugin-cc",
+  "version": "1.0.6-ollama.4",
   "private": true,
   "type": "module",
-  "description": "Use Codex from Claude Code to review code or delegate tasks.",
+  "description": "Use a local Ollama model from Claude Code to review code or delegate tasks.",
   "license": "Apache-2.0",
   "engines": {
     "node": ">=18.18.0"
@@ -11,7 +11,7 @@
   "scripts": {
     "bump-version": "node scripts/bump-version.mjs",
     "check-version": "node scripts/bump-version.mjs --check",
-    "prebuild": "mkdir -p plugins/codex/.generated/app-server-types && codex app-server generate-ts --out plugins/codex/.generated/app-server-types",
+    "prebuild": "mkdir -p plugins/ollama/.generated/app-server-types && codex app-server generate-ts --out plugins/ollama/.generated/app-server-types",
     "build": "tsc -p tsconfig.app-server.json",
     "test": "node --test tests/*.test.mjs"
   },

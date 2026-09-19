@@ -1,8 +1,0 @@
-{
-  "name": "ollama",
-  "version": "1.0.6-ollama.3",
-  "description": "Use a local Ollama model from Claude Code to review code or delegate tasks. Unofficial fork of OpenAI's Codex plugin.",
-  "author": {
-    "name": "Jose Aguilar (fork of the Codex plugin by OpenAI)"
-  }
-}

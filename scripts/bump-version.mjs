@@ -40,7 +40,7 @@ const TARGETS = [
     ]
   },
   {
-    file: "plugins/codex/.claude-plugin/plugin.json",
+    file: "plugins/ollama/.claude-plugin/plugin.json",
     values: [
       {
         label: "version",
@@ -63,7 +63,7 @@ const TARGETS = [
         }
       },
       {
-        label: "plugins[codex].version",
+        label: "plugins[ollama].version",
         get: (json) => findMarketplacePlugin(json).version,
         set: (json, version) => {
           findMarketplacePlugin(json).version = version;
@@ -133,8 +133,8 @@ function requireObject(value, label) {
 }
 
 function findMarketplacePlugin(json) {
-  const plugin = json.plugins?.find((entry) => entry?.name === "ollama" || entry?.name === "codex");
-  requireObject(plugin, ".claude-plugin/marketplace.json plugins[codex]");
+  const plugin = json.plugins?.find((entry) => entry?.name === "ollama");
+  requireObject(plugin, ".claude-plugin/marketplace.json plugins[ollama]");
   return plugin;
 }
 

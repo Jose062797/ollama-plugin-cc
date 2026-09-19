@@ -11,13 +11,13 @@ import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
 
 import { makeTempDir } from "./helpers.mjs";
-import { resolveStateDir } from "../plugins/codex/scripts/lib/state.mjs";
-import { buildProviderArgs } from "../plugins/codex/scripts/lib/app-server.mjs";
-import { createBrokerSessionDir } from "../plugins/codex/scripts/lib/broker-lifecycle.mjs";
-import { createBrokerEndpoint } from "../plugins/codex/scripts/lib/broker-endpoint.mjs";
+import { resolveStateDir } from "../plugins/ollama/scripts/lib/state.mjs";
+import { buildProviderArgs } from "../plugins/ollama/scripts/lib/app-server.mjs";
+import { createBrokerSessionDir } from "../plugins/ollama/scripts/lib/broker-lifecycle.mjs";
+import { createBrokerEndpoint } from "../plugins/ollama/scripts/lib/broker-endpoint.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const SESSION_HOOK = path.join(ROOT, "plugins", "codex", "scripts", "session-lifecycle-hook.mjs");
+const SESSION_HOOK = path.join(ROOT, "plugins", "ollama", "scripts", "session-lifecycle-hook.mjs");
 
 function withEnv(vars, fn) {
   const saved = {};

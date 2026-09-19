@@ -8,12 +8,12 @@ import { fileURLToPath } from "node:url";
 
 import { buildEnv, installFakeCodex } from "./fake-codex-fixture.mjs";
 import { initGitRepo, makeTempDir, run } from "./helpers.mjs";
-import { loadBrokerSession, saveBrokerSession } from "../plugins/codex/scripts/lib/broker-lifecycle.mjs";
-import { resolveStateDir } from "../plugins/codex/scripts/lib/state.mjs";
+import { loadBrokerSession, saveBrokerSession } from "../plugins/ollama/scripts/lib/broker-lifecycle.mjs";
+import { resolveStateDir } from "../plugins/ollama/scripts/lib/state.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const PLUGIN_ROOT = path.join(ROOT, "plugins", "codex");
-const SCRIPT = path.join(PLUGIN_ROOT, "scripts", "codex-companion.mjs");
+const PLUGIN_ROOT = path.join(ROOT, "plugins", "ollama");
+const SCRIPT = path.join(PLUGIN_ROOT, "scripts", "ollama-companion.mjs");
 const STOP_HOOK = path.join(PLUGIN_ROOT, "scripts", "stop-review-gate-hook.mjs");
 const SESSION_HOOK = path.join(PLUGIN_ROOT, "scripts", "session-lifecycle-hook.mjs");
 
@@ -45,7 +45,7 @@ test("setup reports ready when fake codex is installed and authenticated", () =>
   assert.equal(payload.sessionRuntime.mode, "direct");
 });
 
-test("setup is ready without npm when Codex is already installed and authenticated", () => {
+test("setup is ready without npm when the Codex CLI is already installed and authenticated", () => {
   const binDir = makeTempDir();
   installFakeCodex(binDir);
   fs.symlinkSync(process.execPath, path.join(binDir, "node"));
@@ -99,7 +99,7 @@ test("setup is ready when the active provider does not require OpenAI login", ()
   assert.equal(payload.auth.loggedIn, true);
   assert.equal(payload.auth.authMethod, null);
   assert.equal(payload.auth.source, "app-server");
-  assert.match(payload.auth.detail, /configured and does not require OpenAI authentication/i);
+  assert.match(payload.auth.detail, /configured and does not require a login/i);
 });
 
 test("setup treats custom providers with app-server-ready config as ready", () => {
@@ -117,7 +117,7 @@ test("setup treats custom providers with app-server-ready config as ready", () =
   assert.equal(payload.auth.loggedIn, true);
   assert.equal(payload.auth.authMethod, null);
   assert.equal(payload.auth.source, "app-server");
-  assert.match(payload.auth.detail, /configured and does not require OpenAI authentication/i);
+  assert.match(payload.auth.detail, /configured and does not require a login/i);
 });
 
 test("setup reports not ready when app-server config read fails", () => {
@@ -176,7 +176,7 @@ test("task runs when the active provider does not require OpenAI login", () => {
   assert.match(result.stdout, /Handled the requested task/);
 });
 
-test("task runs without auth preflight so Codex can refresh an expired session", () => {
+test("task runs without auth preflight so the Codex CLI can refresh an expired session", () => {
   const repo = makeTempDir();
   const binDir = makeTempDir();
   installFakeCodex(binDir, "refreshable-auth");
@@ -230,7 +230,7 @@ test("transfer delegates the current Claude session directly to native import", 
   const payload = JSON.parse(result.stdout);
   const canonicalSourcePath = fs.realpathSync(sourcePath);
   assert.equal(payload.threadId, "thr_1");
-  assert.equal(payload.resumeCommand, "codex resume thr_1");
+  assert.equal(payload.resumeCommand, "codex -c model_provider=ollama -c model=gpt-oss:20b resume thr_1");
   assert.equal(payload.sourcePath, canonicalSourcePath);
   assert.equal(payload.sessionId, sessionId);
 
@@ -328,7 +328,7 @@ test("transfer rejects sources outside the Claude projects directory", () => {
   assert.match(result.stderr, /only from .*\.claude.*projects/);
 });
 
-test("task reports the actual Codex auth error when the run is rejected", () => {
+test("task reports the actual Codex CLI auth error when the run is rejected", () => {
   const repo = makeTempDir();
   const binDir = makeTempDir();
   installFakeCodex(binDir, "auth-run-fails");
@@ -408,7 +408,7 @@ test("adversarial review accepts the same base-branch targeting as review", () =
   assert.match(result.stdout, /Missing empty-state guard/);
 });
 
-test("adversarial review asks Codex to inspect larger diffs itself", () => {
+test("adversarial review asks Ollama to inspect larger diffs itself", () => {
   const repo = makeTempDir();
   const binDir = makeTempDir();
   installFakeCodex(binDir);
@@ -520,7 +520,7 @@ test("task-resume-candidate returns the latest rescue thread from the current se
           {
             id: "task-current",
             status: "completed",
-            title: "Codex Task",
+            title: "Ollama Task",
             jobClass: "task",
             sessionId: "sess-current",
             threadId: "thr_current",
@@ -530,7 +530,7 @@ test("task-resume-candidate returns the latest rescue thread from the current se
           {
             id: "task-other-session",
             status: "completed",
-            title: "Codex Task",
+            title: "Ollama Task",
             jobClass: "task",
             sessionId: "sess-other",
             threadId: "thr_other",
@@ -540,7 +540,7 @@ test("task-resume-candidate returns the latest rescue thread from the current se
           {
             id: "review-current",
             status: "completed",
-            title: "Codex Review",
+            title: "Ollama Review",
             jobClass: "review",
             sessionId: "sess-current",
             threadId: "thr_review",
@@ -608,7 +608,7 @@ test("task --resume-last does not resume a task from another Claude session", ()
     env: currentEnv
   });
   assert.equal(resume.status, 1);
-  assert.match(resume.stderr, /No previous Codex task thread was found for this repository\./);
+  assert.match(resume.stderr, /No previous Ollama task thread was found for this repository\./);
 
   const fakeState = JSON.parse(fs.readFileSync(statePath, "utf8"));
   assert.equal(fakeState.lastTurnStart.threadId, "thr_1");
@@ -636,7 +636,7 @@ test("task --resume-last ignores running tasks from other Claude sessions", () =
           {
             id: "task-other-running",
             status: "running",
-            title: "Codex Task",
+            title: "Ollama Task",
             jobClass: "task",
             sessionId: "sess-other",
             threadId: "thr_other",
@@ -667,7 +667,7 @@ test("task --resume-last ignores running tasks from other Claude sessions", () =
     env
   });
   assert.equal(resume.status, 1);
-  assert.match(resume.stderr, /No previous Codex task thread was found for this repository\./);
+  assert.match(resume.stderr, /No previous Ollama task thread was found for this repository\./);
 });
 
 test("session start hook exports the Claude session id, transcript path, and plugin data dir", () => {
@@ -699,7 +699,7 @@ test("session start hook exports the Claude session id, transcript path, and plu
   );
 });
 
-test("write task output focuses on the Codex result without generic follow-up hints", () => {
+test("write task output focuses on the Ollama result without generic follow-up hints", () => {
   const repo = makeTempDir();
   const binDir = makeTempDir();
   installFakeCodex(binDir);
@@ -781,7 +781,7 @@ test("task forwards model selection and reasoning effort to app-server turn/star
 
   assert.equal(result.status, 0, result.stderr);
   const fakeState = JSON.parse(fs.readFileSync(statePath, "utf8"));
-  assert.equal(fakeState.lastTurnStart.model, "gpt-5.3-codex-spark");
+  assert.equal(fakeState.lastTurnStart.model, "spark"); // ollama-plugin-cc: no model aliases
   assert.equal(fakeState.lastTurnStart.effort, "low");
 });
 
@@ -891,7 +891,7 @@ test("task can finish after subagent work even if the parent turn/completed even
   assert.equal(result.stdout, "Handled the requested task.\nTask prompt accepted.\n");
 });
 
-test("task using the shared broker still completes when Codex spawns subagents", () => {
+test("task using the shared broker still completes when Ollama spawns subagents", () => {
   const repo = makeTempDir();
   const binDir = makeTempDir();
   installFakeCodex(binDir, "with-subagent");
@@ -1058,8 +1058,8 @@ test("review accepts --background while still running as a tracked review job", 
   });
 
   assert.equal(status.status, 0, status.stderr);
-  assert.match(status.stdout, /# Codex Status/);
-  assert.match(status.stdout, /Codex Review/);
+  assert.match(status.stdout, /# Ollama Status/);
+  assert.match(status.stdout, /Ollama Review/);
   assert.match(status.stdout, /completed/);
 });
 
@@ -1073,7 +1073,7 @@ test("status shows phases, hints, and the latest finished job", () => {
   fs.writeFileSync(
     logFile,
     [
-      "[2026-03-18T15:30:00.000Z] Starting Codex Review.",
+      "[2026-03-18T15:30:00.000Z] Starting Ollama Review.",
       "[2026-03-18T15:30:01.000Z] Thread ready (thr_1).",
       "[2026-03-18T15:30:02.000Z] Turn started (turn_1).",
       "[2026-03-18T15:30:03.000Z] Reviewer started: current changes"
@@ -1088,8 +1088,8 @@ test("status shows phases, hints, and the latest finished job", () => {
       {
         id: "review-done",
         status: "completed",
-        title: "Codex Review",
-        rendered: "# Codex Review\n\nReviewed uncommitted changes.\nNo material issues found.\n"
+        title: "Ollama Review",
+        rendered: "# Ollama Review\n\nReviewed uncommitted changes.\nNo material issues found.\n"
       },
       null,
       2
@@ -1109,7 +1109,7 @@ test("status shows phases, hints, and the latest finished job", () => {
             kind: "review",
             kindLabel: "review",
             status: "running",
-            title: "Codex Review",
+            title: "Ollama Review",
             jobClass: "review",
             phase: "reviewing",
             threadId: "thr_1",
@@ -1121,7 +1121,7 @@ test("status shows phases, hints, and the latest finished job", () => {
           {
             id: "review-done",
             status: "completed",
-            title: "Codex Review",
+            title: "Ollama Review",
             jobClass: "review",
             threadId: "thr_done",
             summary: "Review main...HEAD",
@@ -1144,7 +1144,7 @@ test("status shows phases, hints, and the latest finished job", () => {
 
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /Active jobs:/);
-  assert.match(result.stdout, /\| Job \| Kind \| Status \| Phase \| Elapsed \| Codex Session ID \| Summary \| Actions \|/);
+  assert.match(result.stdout, /\| Job \| Kind \| Status \| Phase \| Elapsed \| Codex CLI Session ID \| Summary \| Actions \|/);
   assert.match(result.stdout, /\| review-live \| review \| running \| reviewing \| .* \| thr_1 \| Review working tree diff \|/);
   assert.match(result.stdout, /`\/ollama:status review-live`<br>`\/ollama:cancel review-live`/);
   assert.match(result.stdout, /Live details:/);
@@ -1152,13 +1152,13 @@ test("status shows phases, hints, and the latest finished job", () => {
   assert.match(result.stdout, /Progress:/);
   assert.match(result.stdout, /Session runtime: direct startup/);
   assert.match(result.stdout, /Phase: reviewing/);
-  assert.match(result.stdout, /Codex session ID: thr_1/);
-  assert.match(result.stdout, /Resume in Codex: codex resume thr_1/);
+  assert.match(result.stdout, /Codex CLI session ID: thr_1/);
+  assert.match(result.stdout, /Resume with the Codex CLI: codex -c model_provider=ollama -c model=gpt-oss:20b resume thr_1/);
   assert.match(result.stdout, /Thread ready \(thr_1\)\./);
   assert.match(result.stdout, /Reviewer started: current changes/);
   assert.match(result.stdout, /Duration: 1m 5s/);
-  assert.match(result.stdout, /Codex session ID: thr_done/);
-  assert.match(result.stdout, /Resume in Codex: codex resume thr_done/);
+  assert.match(result.stdout, /Codex CLI session ID: thr_done/);
+  assert.match(result.stdout, /Resume with the Codex CLI: codex -c model_provider=ollama -c model=gpt-oss:20b resume thr_done/);
 });
 
 test("status without a job id only shows jobs from the current Claude session", () => {
@@ -1184,7 +1184,7 @@ test("status without a job id only shows jobs from the current Claude session", 
             kind: "review",
             kindLabel: "review",
             status: "running",
-            title: "Codex Review",
+            title: "Ollama Review",
             jobClass: "review",
             phase: "reviewing",
             sessionId: "sess-current",
@@ -1199,7 +1199,7 @@ test("status without a job id only shows jobs from the current Claude session", 
             kind: "review",
             kindLabel: "review",
             status: "completed",
-            title: "Codex Review",
+            title: "Ollama Review",
             jobClass: "review",
             sessionId: "sess-other",
             threadId: "thr_other",
@@ -1252,7 +1252,7 @@ test("status preserves adversarial review kind labels", () => {
             id: "review-adv-live",
             kind: "adversarial-review",
             status: "running",
-            title: "Codex Adversarial Review",
+            title: "Ollama Adversarial Review",
             jobClass: "review",
             phase: "reviewing",
             threadId: "thr_adv_live",
@@ -1265,7 +1265,7 @@ test("status preserves adversarial review kind labels", () => {
             id: "review-adv",
             kind: "adversarial-review",
             status: "completed",
-            title: "Codex Adversarial Review",
+            title: "Ollama Adversarial Review",
             jobClass: "review",
             threadId: "thr_adv_done",
             summary: "Adversarial review working tree diff",
@@ -1288,9 +1288,9 @@ test("status preserves adversarial review kind labels", () => {
 
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /\| review-adv-live \| adversarial-review \| running \| reviewing \|/);
-  assert.match(result.stdout, /- review-adv \| completed \| adversarial-review \| Codex Adversarial Review/);
-  assert.match(result.stdout, /Codex session ID: thr_adv_live/);
-  assert.match(result.stdout, /Codex session ID: thr_adv_done/);
+  assert.match(result.stdout, /- review-adv \| completed \| adversarial-review \| Ollama Adversarial Review/);
+  assert.match(result.stdout, /Codex CLI session ID: thr_adv_live/);
+  assert.match(result.stdout, /Codex CLI session ID: thr_adv_done/);
 });
 
 test("status --wait times out cleanly when a job is still active", () => {
@@ -1300,14 +1300,14 @@ test("status --wait times out cleanly when a job is still active", () => {
   fs.mkdirSync(jobsDir, { recursive: true });
 
   const logFile = path.join(jobsDir, "task-live.log");
-  fs.writeFileSync(logFile, "[2026-03-18T15:30:00.000Z] Starting Codex Task.\n", "utf8");
+  fs.writeFileSync(logFile, "[2026-03-18T15:30:00.000Z] Starting Ollama Task.\n", "utf8");
   fs.writeFileSync(
     path.join(jobsDir, "task-live.json"),
     JSON.stringify(
       {
         id: "task-live",
         status: "running",
-        title: "Codex Task",
+        title: "Ollama Task",
         logFile
       },
       null,
@@ -1326,7 +1326,7 @@ test("status --wait times out cleanly when a job is still active", () => {
           {
             id: "task-live",
             status: "running",
-            title: "Codex Task",
+            title: "Ollama Task",
             jobClass: "task",
             summary: "Investigate flaky test",
             logFile,
@@ -1365,8 +1365,8 @@ test("result returns the stored output for the latest finished job by default", 
       {
         id: "review-finished",
         status: "completed",
-        title: "Codex Review",
-        rendered: "# Codex Review\n\nReviewed uncommitted changes.\nNo material issues found.\n",
+        title: "Ollama Review",
+        rendered: "# Ollama Review\n\nReviewed uncommitted changes.\nNo material issues found.\n",
         result: {
           codex: {
             stdout: "Reviewed uncommitted changes.\nNo material issues found."
@@ -1390,7 +1390,7 @@ test("result returns the stored output for the latest finished job by default", 
           {
             id: "review-finished",
             status: "completed",
-            title: "Codex Review",
+            title: "Ollama Review",
             jobClass: "review",
             threadId: "thr_review_finished",
             summary: "Review working tree diff",
@@ -1412,7 +1412,7 @@ test("result returns the stored output for the latest finished job by default", 
   assert.equal(result.status, 0, result.stderr);
   assert.equal(
     result.stdout,
-    "Reviewed uncommitted changes.\nNo material issues found.\n\nCodex session ID: thr_review_finished\nResume in Codex: codex resume thr_review_finished\n"
+    "Reviewed uncommitted changes.\nNo material issues found.\n\nCodex CLI session ID: thr_review_finished\nResume with the Codex CLI: codex -c model_provider=ollama -c model=gpt-oss:20b resume thr_review_finished\n"
   );
 });
 
@@ -1428,7 +1428,7 @@ test("result without a job id prefers the latest finished job from the current C
       {
         id: "review-current",
         status: "completed",
-        title: "Codex Review",
+        title: "Ollama Review",
         threadId: "thr_current",
         result: {
           codex: {
@@ -1448,7 +1448,7 @@ test("result without a job id prefers the latest finished job from the current C
       {
         id: "review-other",
         status: "completed",
-        title: "Codex Review",
+        title: "Ollama Review",
         threadId: "thr_other",
         result: {
           codex: {
@@ -1472,7 +1472,7 @@ test("result without a job id prefers the latest finished job from the current C
           {
             id: "review-current",
             status: "completed",
-            title: "Codex Review",
+            title: "Ollama Review",
             jobClass: "review",
             sessionId: "sess-current",
             threadId: "thr_current",
@@ -1483,7 +1483,7 @@ test("result without a job id prefers the latest finished job from the current C
           {
             id: "review-other",
             status: "completed",
-            title: "Codex Review",
+            title: "Ollama Review",
             jobClass: "review",
             sessionId: "sess-other",
             threadId: "thr_other",
@@ -1510,11 +1510,11 @@ test("result without a job id prefers the latest finished job from the current C
   assert.equal(result.status, 0, result.stderr);
   assert.equal(
     result.stdout,
-    "Current session output.\n\nCodex session ID: thr_current\nResume in Codex: codex resume thr_current\n"
+    "Current session output.\n\nCodex CLI session ID: thr_current\nResume with the Codex CLI: codex -c model_provider=ollama -c model=gpt-oss:20b resume thr_current\n"
   );
 });
 
-test("result for a finished write-capable task returns the raw Codex final response", () => {
+test("result for a finished write-capable task returns the raw Ollama final response", () => {
   const repo = makeTempDir();
   const binDir = makeTempDir();
   installFakeCodex(binDir);
@@ -1536,8 +1536,8 @@ test("result for a finished write-capable task returns the raw Codex final respo
 
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /^Handled the requested task\.\nTask prompt accepted\.\n/);
-  assert.match(result.stdout, /Codex session ID: thr_[a-z0-9]+/i);
-  assert.match(result.stdout, /Resume in Codex: codex resume thr_[a-z0-9]+/i);
+  assert.match(result.stdout, /Codex CLI session ID: thr_[a-z0-9]+/i);
+  assert.match(result.stdout, /Resume with the Codex CLI: codex -c model_provider=ollama -c model=gpt-oss:20b resume thr_[a-z0-9]+/i);
 });
 
 test("cancel stops an active background job and marks it cancelled", async (t) => {
@@ -1567,14 +1567,14 @@ test("cancel stops an active background job and marks it cancelled", async (t) =
 
   const logFile = path.join(jobsDir, "task-live.log");
   const jobFile = path.join(jobsDir, "task-live.json");
-  fs.writeFileSync(logFile, "[2026-03-18T15:30:00.000Z] Starting Codex Task.\n", "utf8");
+  fs.writeFileSync(logFile, "[2026-03-18T15:30:00.000Z] Starting Ollama Task.\n", "utf8");
   fs.writeFileSync(
     jobFile,
     JSON.stringify(
       {
         id: "task-live",
         status: "running",
-        title: "Codex Task",
+        title: "Ollama Task",
         logFile
       },
       null,
@@ -1592,7 +1592,7 @@ test("cancel stops an active background job and marks it cancelled", async (t) =
           {
             id: "task-live",
             status: "running",
-            title: "Codex Task",
+            title: "Ollama Task",
             jobClass: "task",
             summary: "Investigate flaky test",
             pid: sleeper.pid,
@@ -1653,7 +1653,7 @@ test("cancel without a job id ignores active jobs from other Claude sessions", (
           {
             id: "task-other",
             status: "running",
-            title: "Codex Task",
+            title: "Ollama Task",
             jobClass: "task",
             sessionId: "sess-other",
             summary: "Other session run",
@@ -1684,7 +1684,7 @@ test("cancel without a job id ignores active jobs from other Claude sessions", (
     env
   });
   assert.equal(cancel.status, 1);
-  assert.match(cancel.stderr, /No active Codex jobs to cancel for this session\./);
+  assert.match(cancel.stderr, /No active Ollama jobs to cancel for this session\./);
 
   const state = JSON.parse(fs.readFileSync(path.join(stateDir, "state.json"), "utf8"));
   assert.equal(state.jobs[0].status, "running");
@@ -1708,7 +1708,7 @@ test("cancel with a job id can still target an active job from another Claude se
           {
             id: "task-other",
             status: "running",
-            title: "Codex Task",
+            title: "Ollama Task",
             jobClass: "task",
             sessionId: "sess-other",
             summary: "Other session run",
@@ -1855,7 +1855,7 @@ test("session end fully cleans up jobs for the ending session", async (t) => {
           {
             id: "review-completed",
             status: "completed",
-            title: "Codex Review",
+            title: "Ollama Review",
             sessionId: "sess-current",
             logFile: completedLog,
             createdAt: "2026-03-18T15:30:00.000Z",
@@ -1864,7 +1864,7 @@ test("session end fully cleans up jobs for the ending session", async (t) => {
           {
             id: "review-running",
             status: "running",
-            title: "Codex Review",
+            title: "Ollama Review",
             sessionId: "sess-current",
             pid: sleeper.pid,
             logFile: runningLog,
@@ -1874,7 +1874,7 @@ test("session end fully cleans up jobs for the ending session", async (t) => {
           {
             id: "review-other",
             status: "completed",
-            title: "Codex Review",
+            title: "Ollama Review",
             sessionId: "sess-other",
             logFile: otherSessionLog,
             createdAt: "2026-03-18T15:34:00.000Z",
@@ -1960,7 +1960,7 @@ test("stop hook runs a stop-time review task and blocks on findings when the rev
   assert.equal(blocked.status, 0, blocked.stderr);
   const blockedPayload = JSON.parse(blocked.stdout);
   assert.equal(blockedPayload.decision, "block");
-  assert.match(blockedPayload.reason, /Codex stop-time review found issues that still need fixes/i);
+  assert.match(blockedPayload.reason, /Ollama stop-time review found issues that still need fixes/i);
   assert.match(blockedPayload.reason, /Missing empty-state guard/i);
 
   const fakeState = JSON.parse(fs.readFileSync(fakeStatePath, "utf8"));
@@ -1977,7 +1977,7 @@ test("stop hook runs a stop-time review task and blocks on findings when the rev
     }
   });
   assert.equal(status.status, 0, status.stderr);
-  assert.match(status.stdout, /Codex Stop Gate Review/);
+  assert.match(status.stdout, /Ollama Stop Gate Review/);
 });
 
 test("stop hook logs running tasks to stderr without blocking when the review gate is disabled", () => {
@@ -2006,7 +2006,7 @@ test("stop hook logs running tasks to stderr without blocking when the review ga
           {
             id: "task-live",
             status: "running",
-            title: "Codex Task",
+            title: "Ollama Task",
             jobClass: "task",
             sessionId: "sess-current",
             logFile: runningLog,
@@ -2032,7 +2032,7 @@ test("stop hook logs running tasks to stderr without blocking when the review ga
 
   assert.equal(blocked.status, 0, blocked.stderr);
   assert.equal(blocked.stdout.trim(), "");
-  assert.match(blocked.stderr, /Codex task task-live is still running/i);
+  assert.match(blocked.stderr, /Ollama task task-live is still running/i);
   assert.match(blocked.stderr, /\/ollama:status/i);
   assert.match(blocked.stderr, /\/ollama:cancel task-live/i);
 });
@@ -2062,7 +2062,7 @@ test("stop hook allows the stop when the review gate is enabled and the stop-tim
   assert.equal(allowed.stdout.trim(), "");
 });
 
-test("stop hook does not block when Codex is unavailable even if the review gate is enabled", () => {
+test("stop hook does not block when Ollama is unavailable even if the review gate is enabled", () => {
   const repo = makeTempDir();
   initGitRepo(repo);
   fs.writeFileSync(path.join(repo, "README.md"), "hello\n");
@@ -2085,7 +2085,7 @@ test("stop hook does not block when Codex is unavailable even if the review gate
 
   assert.equal(allowed.status, 0, allowed.stderr);
   assert.equal(allowed.stdout.trim(), "");
-  assert.match(allowed.stderr, /Codex is not set up for the review gate/i);
+  assert.match(allowed.stderr, /Ollama is not set up for the review gate/i);
   assert.match(allowed.stderr, /Run \/ollama:setup/i);
 });
 
@@ -2111,7 +2111,7 @@ test("stop hook runs the actual task when auth status looks stale", () => {
   });
 
   assert.equal(allowed.status, 0, allowed.stderr);
-  assert.doesNotMatch(allowed.stderr, /Codex is not set up for the review gate/i);
+  assert.doesNotMatch(allowed.stderr, /Ollama is not set up for the review gate/i);
   const payload = JSON.parse(allowed.stdout);
   assert.equal(payload.decision, "block");
   assert.match(payload.reason, /Missing empty-state guard/i);
