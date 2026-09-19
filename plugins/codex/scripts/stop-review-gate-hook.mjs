@@ -14,6 +14,12 @@ import { sortJobsNewestFirst } from "./lib/job-control.mjs";
 import { SESSION_ID_ENV } from "./lib/tracked-jobs.mjs";
 import { resolveWorkspaceRoot } from "./lib/workspace.mjs";
 
+// ollama-plugin-cc: see session-lifecycle-hook.mjs; expose this plugin's data folder
+// under the name the rest of the runtime reads.
+if (!process.env.OLLAMA_COMPANION_DATA && process.env.CLAUDE_PLUGIN_DATA) {
+  process.env.OLLAMA_COMPANION_DATA = process.env.CLAUDE_PLUGIN_DATA;
+}
+
 const STOP_REVIEW_TIMEOUT_MS = 15 * 60 * 1000;
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const ROOT_DIR = path.resolve(SCRIPT_DIR, "..");

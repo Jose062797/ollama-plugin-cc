@@ -1,3 +1,4 @@
+// Modified for ollama-plugin-cc (2026): routed to a local Ollama model. Original work Copyright 2026 OpenAI, Apache-2.0.
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -16,11 +17,11 @@ test("resolveStateDir uses a temp-backed per-workspace directory", () => {
   assert.match(stateDir, new RegExp(`^${os.tmpdir().replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`));
 });
 
-test("resolveStateDir uses CLAUDE_PLUGIN_DATA when it is provided", () => {
+test("resolveStateDir uses OLLAMA_COMPANION_DATA when it is provided", () => {
   const workspace = makeTempDir();
   const pluginDataDir = makeTempDir();
-  const previousPluginDataDir = process.env.CLAUDE_PLUGIN_DATA;
-  process.env.CLAUDE_PLUGIN_DATA = pluginDataDir;
+  const previousPluginDataDir = process.env.OLLAMA_COMPANION_DATA;
+  process.env.OLLAMA_COMPANION_DATA = pluginDataDir;
 
   try {
     const stateDir = resolveStateDir(workspace);
@@ -33,9 +34,9 @@ test("resolveStateDir uses CLAUDE_PLUGIN_DATA when it is provided", () => {
     );
   } finally {
     if (previousPluginDataDir == null) {
-      delete process.env.CLAUDE_PLUGIN_DATA;
+      delete process.env.OLLAMA_COMPANION_DATA;
     } else {
-      process.env.CLAUDE_PLUGIN_DATA = previousPluginDataDir;
+      process.env.OLLAMA_COMPANION_DATA = previousPluginDataDir;
     }
   }
 });

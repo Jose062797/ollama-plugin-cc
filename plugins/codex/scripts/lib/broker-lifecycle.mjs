@@ -1,3 +1,4 @@
+// Modified for ollama-plugin-cc (2026): routed to a local Ollama model. Original work Copyright 2026 OpenAI, Apache-2.0.
 import fs from "node:fs";
 import net from "node:net";
 import os from "node:os";
@@ -8,11 +9,11 @@ import { fileURLToPath } from "node:url";
 import { createBrokerEndpoint, parseBrokerEndpoint } from "./broker-endpoint.mjs";
 import { resolveStateDir } from "./state.mjs";
 
-export const PID_FILE_ENV = "CODEX_COMPANION_APP_SERVER_PID_FILE";
-export const LOG_FILE_ENV = "CODEX_COMPANION_APP_SERVER_LOG_FILE";
+export const PID_FILE_ENV = "OLLAMA_COMPANION_APP_SERVER_PID_FILE";
+export const LOG_FILE_ENV = "OLLAMA_COMPANION_APP_SERVER_LOG_FILE";
 const BROKER_STATE_FILE = "broker.json";
 
-export function createBrokerSessionDir(prefix = "cxc-") {
+export function createBrokerSessionDir(prefix = "olc-") {
   return fs.mkdtempSync(path.join(os.tmpdir(), prefix));
 }
 

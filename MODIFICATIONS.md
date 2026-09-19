@@ -11,7 +11,10 @@ All changes below except the files marked **new** are produced by `scripts/apply
 | File | Change |
 |---|---|
 | `plugins/codex/scripts/lib/app-server.mjs` | `codex app-server` is started with `-c model_provider=<provider> -c model=<model>`, so the Codex CLI talks to a local provider. Defaults: `ollama` and `gpt-oss:20b`. Overridable with `OLLAMA_PLUGIN_CC_PROVIDER` and `OLLAMA_PLUGIN_CC_MODEL`; values are validated because the command line is assembled by a shell on Windows. |
-| `plugins/codex/scripts/lib/state.mjs` | The temporary fallback state directory is `ollama-companion` instead of `codex-companion`, so it never collides with the official plugin. |
+| `plugins/codex/scripts/lib/state.mjs` | The temporary fallback state directory is `ollama-companion` instead of `codex-companion`. The data folder is read from `OLLAMA_COMPANION_DATA`, never from `CLAUDE_PLUGIN_DATA`, which upstream exports to the whole session and which may therefore belong to the official plugin. |
+| `plugins/codex/scripts/session-lifecycle-hook.mjs`, `plugins/codex/scripts/stop-review-gate-hook.mjs` | Hooks receive this plugin's own `CLAUDE_PLUGIN_DATA` from Claude Code and expose it as `OLLAMA_COMPANION_DATA`; the SessionStart hook exports that name to the session instead of `CLAUDE_PLUGIN_DATA`. Added in 1.0.6-ollama.3 after a real session showed the fork writing its jobs into the official plugin's data folder and offering to resume the official plugin's thread. |
+| `plugins/codex/scripts/session-lifecycle-hook.mjs`, `scripts/lib/tracked-jobs.mjs`, `scripts/lib/claude-session-transfer.mjs`, `scripts/lib/app-server.mjs`, `scripts/lib/broker-lifecycle.mjs` | Session variables `CODEX_COMPANION_*` renamed `OLLAMA_COMPANION_*`. |
+| `plugins/codex/scripts/lib/broker-lifecycle.mjs`, `scripts/lib/broker-endpoint.mjs`, `scripts/app-server-broker.mjs`, `scripts/lib/codex.mjs` | Own runtime names: broker folders `olc-*`, pipes `*-ollama-app-server`, broker user agent `ollama-companion-broker`, service name `claude_code_ollama_plugin`, and Codex CLI thread prefix `Ollama Companion Task`, so `--resume` never picks up the official plugin's threads from the shared Codex CLI history. |
 
 Nothing else in the runtime changes: job tracking, the broker, hooks, prompts, schemas, sandbox and approval defaults are upstream's.
 
@@ -33,8 +36,10 @@ The directory is still called `plugins/codex` and the subagent file `codex-rescu
 
 | File | Change |
 |---|---|
-| `tests/fake-codex-fixture.mjs` | The fake `codex` binary skips leading `-c key=value` pairs before reading the subcommand. |
+| `tests/fake-codex-fixture.mjs` | The fake `codex` binary skips leading `-c key=value` pairs before reading the subcommand, and recognises the `Ollama Companion Task` thread prefix. |
 | `tests/commands.test.mjs` | Reads the preserved upstream README from `docs/UPSTREAM_README.md`. |
+| `tests/runtime.test.mjs`, `tests/state.test.mjs`, `tests/broker-endpoint.test.mjs` | Use the renamed session variables, data-folder variable and broker names. |
+| `tests/ollama-independence.test.mjs` | **new**. Checks that the SessionStart hook exports `OLLAMA_COMPANION_DATA` and never `CLAUDE_PLUGIN_DATA`, that the runtime ignores another plugin's `CLAUDE_PLUGIN_DATA`, the provider arguments and their validation, and the broker names. |
 
 ## Documentation
 

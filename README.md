@@ -16,7 +16,7 @@ OpenAI's plugin lets Claude Code hand work to Codex with `/codex:rescue`, `/code
 | `/codex:status`, `/codex:result`, `/codex:cancel` | `/ollama:status`, `/ollama:result`, `/ollama:cancel` |
 | `/codex:setup`, `/codex:transfer` | `/ollama:setup`, `/ollama:transfer` |
 
-The flags are the same: `--background`, `--wait`, `--resume`, `--fresh`, `--model`, `--effort`. The forwarding subagent is the same. Both plugins can be installed side by side; they keep separate state and do not interfere.
+The flags are the same: `--background`, `--wait`, `--resume`, `--fresh`, `--model`, `--effort`. The forwarding subagent is the same. Both plugins can be installed side by side: this fork has its own session variables, data folder, broker names and Codex CLI thread names, so neither plugin lists, resumes or reuses the other's jobs. Versions before 1.0.6-ollama.3 did share state with the official plugin; update if you run both.
 
 It still uses the **Codex CLI** as the agent harness (sandbox, tools, threads). Only the model behind it is local.
 
@@ -88,7 +88,7 @@ The whole difference is produced by [`scripts/apply-ollama-patch.mjs`](scripts/a
 
 1. `codex app-server` is started with `-c model_provider=ollama -c model=<model>`. The Codex CLI rejects `--profile` for `app-server`, so config overrides are the supported way. Upstream has open requests for the same capability ([#251](https://github.com/openai/codex-plugin-cc/issues/251), [#418](https://github.com/openai/codex-plugin-cc/issues/418), [#419](https://github.com/openai/codex-plugin-cc/pull/419)).
 2. The command and subagent namespace is `ollama:` instead of `codex:`, two descriptions name the local backend, and the three internal skills have their own names (`ollama-cli-runtime`, `ollama-result-handling`, `ollama-prompting`). Claude Code resolves a subagent's preloaded skills by bare name, so identical names made the forwarder load the official plugin's skills when both were installed.
-3. The temporary fallback state directory has its own name.
+3. Nothing used at runtime is shared with the official plugin. Upstream's SessionStart hook exports `CLAUDE_PLUGIN_DATA` to the whole session, where the last plugin to start wins; this fork exports its data folder as `OLLAMA_COMPANION_DATA` instead and never reads the session-wide variable. Its session variables are `OLLAMA_COMPANION_*` instead of `CODEX_COMPANION_*`, and its broker folders (`olc-*`), pipes (`*-ollama-app-server`), service name and Codex CLI thread prefix (`Ollama Companion Task`) are its own. The thread prefix matters: the Codex CLI history in `~/.codex` is shared by everything that uses the Codex CLI, and `--resume` finds the latest thread by that prefix.
 
 To audit it yourself:
 
@@ -109,9 +109,15 @@ npm test
 
 The patch script is idempotent and stops with an error if upstream changed one of the lines it edits. If `README.md` conflicts, keep this file and copy upstream's version to `docs/UPSTREAM_README.md`.
 
-The acceptance rule is: no new test failures compared with untouched upstream. Upstream is developed on macOS and Linux; on Windows 11 with Node 24, 12 of its 91 tests fail on the untouched upstream code (Unix sockets, symlinks, process cleanup, native session transfer), and exactly the same 12 fail after the patch.
+The acceptance rule is: no new test failures compared with untouched upstream. Upstream is developed on macOS and Linux; on Windows 11 with Node 24, 9 of its 91 tests fail on the untouched upstream code (Unix sockets, symlinks, process cleanup, native session transfer), and exactly the same 9 fail in this fork, whose own 5 tests pass.
 
-Run the tests from a plain terminal, not from inside a Claude Code session. Claude Code sets `CLAUDE_PLUGIN_DATA` for its plugins; the tests inherit it, write their state into that plugin's data folder, and one more test fails. If you must run them there, unset it first (`env -u CLAUDE_PLUGIN_DATA npm test` in a POSIX shell).
+Run the tests from a plain terminal, not from inside a Claude Code session. Inside a session the plugins export their session variables: this fork's `OLLAMA_COMPANION_*`, and the official plugin's `CLAUDE_PLUGIN_DATA` and `CODEX_COMPANION_*`. The tests inherit them, write their state into those folders and filter jobs by the real session id, which makes tests fail that pass in a clean environment (earlier versions of this README reported 12 and 13 upstream failures for that reason). If you must run them there, unset them first:
+
+```bash
+env -u OLLAMA_COMPANION_DATA -u OLLAMA_COMPANION_SESSION_ID -u OLLAMA_COMPANION_TRANSCRIPT_PATH -u CLAUDE_PLUGIN_DATA -u CODEX_COMPANION_SESSION_ID -u CODEX_COMPANION_TRANSCRIPT_PATH npm test
+```
+
+`tests/ollama-independence.test.mjs` is this fork's own: it checks that the two plugins cannot share state.
 
 On Windows the test suite also leaves about 60 `node.exe` processes (brokers and fake Codex servers) and their temp directories behind on every run. Afterwards, end the `node.exe` processes whose command line contains `app-server-broker.mjs` or `codex-plugin-test-`.
 

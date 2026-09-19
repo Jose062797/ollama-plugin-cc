@@ -10,6 +10,7 @@
 //   1. rename   the slash-command and subagent namespace  codex: -> ollama:
 //   1b. skills  unique names for the three internal skills (they collide by bare name otherwise)
 //   2. provider start `codex app-server` with `-c model_provider=... -c model=...`
+//   2b. independence  own session variables, data folder, broker and thread names
 //   3. state    use a separate temp fallback directory
 //   4. fixture  let the fake codex used by the tests accept the leading -c pairs
 //   5. tests    read the preserved upstream README from docs/
@@ -341,6 +342,121 @@ patchJson(".claude-plugin/marketplace.json", (data) => {
     )
   );
 }
+
+// ------------------------------------------------------------ 2b. independence
+// Nothing this plugin reads or writes at runtime may be shared with the official
+// Codex plugin: session variables, data folder, broker names, Codex CLI thread names.
+
+/** Replace tokens with exact expected counts; accept a tree where they are already replaced. */
+function replaceTokens(relPath, pairs) {
+  const file = path.join(ROOT, relPath);
+  let text = current(file);
+  for (const [from, to, expected] of pairs) {
+    const count = text.split(from).length - 1;
+    if (count === expected) {
+      text = text.split(from).join(to);
+    } else if (!(count === 0 && text.split(to).length - 1 >= expected)) {
+      problems.push(`${relPath}: expected "${from}" ${expected} time(s), found ${count}`);
+    }
+  }
+  edits.set(file, text);
+}
+
+const DATA_ENV_GUARD =
+  "if (!process.env.OLLAMA_COMPANION_DATA && process.env.CLAUDE_PLUGIN_DATA) {\n" +
+  "  process.env.OLLAMA_COMPANION_DATA = process.env.CLAUDE_PLUGIN_DATA;\n" +
+  "}";
+
+// Session variables exported by the SessionStart hook and read by the runtime.
+for (const rel of [
+  "scripts/session-lifecycle-hook.mjs",
+  "scripts/lib/claude-session-transfer.mjs",
+  "scripts/lib/app-server.mjs",
+  "scripts/lib/broker-lifecycle.mjs",
+  "scripts/lib/tracked-jobs.mjs"
+]) {
+  const file = path.join(ROOT, PLUGIN_DIR, rel);
+  const text = current(file);
+  const count = text.split("CODEX_COMPANION_").length - 1;
+  if (count === 0 && !text.includes("OLLAMA_COMPANION_")) {
+    problems.push(`${rel}: expected CODEX_COMPANION_ variables, found none`);
+  }
+  edits.set(file, text.split("CODEX_COMPANION_").join("OLLAMA_COMPANION_"));
+}
+
+// Data folder: hooks receive this plugin's own CLAUDE_PLUGIN_DATA from Claude Code;
+// everything else reads OLLAMA_COMPANION_DATA, never the session-wide CLAUDE_PLUGIN_DATA.
+{
+  const file = path.join(ROOT, PLUGIN_DIR, "scripts/lib/state.mjs");
+  edits.set(
+    file,
+    replaceOnce(
+      current(file),
+      'const PLUGIN_DATA_ENV = "CLAUDE_PLUGIN_DATA";',
+      '// ollama-plugin-cc: never the session-wide CLAUDE_PLUGIN_DATA, which may belong to another plugin.\n' +
+        'const PLUGIN_DATA_ENV = "OLLAMA_COMPANION_DATA";',
+      'const PLUGIN_DATA_ENV = "OLLAMA_COMPANION_DATA";',
+      "state.mjs data variable"
+    )
+  );
+}
+{
+  const file = path.join(ROOT, PLUGIN_DIR, "scripts/session-lifecycle-hook.mjs");
+  edits.set(
+    file,
+    replaceOnce(
+      current(file),
+      'const PLUGIN_DATA_ENV = "CLAUDE_PLUGIN_DATA";',
+      'const PLUGIN_DATA_ENV = "OLLAMA_COMPANION_DATA";\n\n' +
+        "// ollama-plugin-cc: Claude Code gives each plugin's hooks their own CLAUDE_PLUGIN_DATA.\n" +
+        "// Upstream re-exports that variable to the whole session, where the last plugin to start\n" +
+        "// wins, so two copies of this plugin would share one data folder. Carry ours under a\n" +
+        "// name that only this plugin uses.\n" +
+        DATA_ENV_GUARD,
+      'const PLUGIN_DATA_ENV = "OLLAMA_COMPANION_DATA";',
+      "session-lifecycle-hook data variable"
+    )
+  );
+}
+{
+  const file = path.join(ROOT, PLUGIN_DIR, "scripts/stop-review-gate-hook.mjs");
+  edits.set(
+    file,
+    replaceOnce(
+      current(file),
+      "const STOP_REVIEW_TIMEOUT_MS = 15 * 60 * 1000;",
+      "// ollama-plugin-cc: see session-lifecycle-hook.mjs; expose this plugin's data folder\n" +
+        "// under the name the rest of the runtime reads.\n" +
+        DATA_ENV_GUARD +
+        "\n\nconst STOP_REVIEW_TIMEOUT_MS = 15 * 60 * 1000;",
+      "OLLAMA_COMPANION_DATA = process.env.CLAUDE_PLUGIN_DATA",
+      "stop-review-gate-hook data variable"
+    )
+  );
+}
+
+// Runtime names: broker session folders and pipes, service name, broker user agent, and
+// the Codex CLI thread-name prefix that `--resume` searches for (the Codex CLI history is
+// shared, so an identical prefix would let one plugin resume the other's thread).
+replaceTokens(`${PLUGIN_DIR}/scripts/lib/broker-lifecycle.mjs`, [['createBrokerSessionDir(prefix = "cxc-")', 'createBrokerSessionDir(prefix = "olc-")', 1]]);
+replaceTokens(`${PLUGIN_DIR}/scripts/lib/broker-endpoint.mjs`, [["-codex-app-server`", "-ollama-app-server`", 1]]);
+replaceTokens(`${PLUGIN_DIR}/scripts/lib/codex.mjs`, [
+  ['const SERVICE_NAME = "claude_code_codex_plugin";', 'const SERVICE_NAME = "claude_code_ollama_plugin";', 1],
+  ['const TASK_THREAD_PREFIX = "Codex Companion Task";', 'const TASK_THREAD_PREFIX = "Ollama Companion Task";', 1]
+]);
+replaceTokens(`${PLUGIN_DIR}/scripts/app-server-broker.mjs`, [['userAgent: "codex-companion-broker"', 'userAgent: "ollama-companion-broker"', 1]]);
+
+// The same names in upstream's tests.
+replaceTokens("tests/runtime.test.mjs", [
+  ["CODEX_COMPANION_", "OLLAMA_COMPANION_", 14],
+  ["CLAUDE_PLUGIN_DATA", "OLLAMA_COMPANION_DATA", 2]
+]);
+replaceTokens("tests/state.test.mjs", [["CLAUDE_PLUGIN_DATA", "OLLAMA_COMPANION_DATA", 5]]);
+replaceTokens("tests/broker-endpoint.test.mjs", [
+  ["cxc-12345", "olc-12345", 6],
+  ["-codex-app-server", "-ollama-app-server", 2]
+]);
+replaceTokens("tests/fake-codex-fixture.mjs", [['startsWith("Codex Companion Task")', 'startsWith("Ollama Companion Task")', 1]]);
 
 // ----------------------------------------------------------------- 8. notices
 for (const [file, text] of edits) {

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// Modified for ollama-plugin-cc (2026): routed to a local Ollama model. Original work Copyright 2026 OpenAI, Apache-2.0.
 
 import fs from "node:fs";
 import net from "node:net";
@@ -147,7 +148,7 @@ async function main() {
           send(socket, {
             id: message.id,
             result: {
-              userAgent: "codex-companion-broker"
+              userAgent: "ollama-companion-broker"
             }
           });
           continue;

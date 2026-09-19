@@ -1,10 +1,11 @@
+// Modified for ollama-plugin-cc (2026): routed to a local Ollama model. Original work Copyright 2026 OpenAI, Apache-2.0.
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
 import { ensureAbsolutePath } from "./fs.mjs";
 
-export const TRANSCRIPT_PATH_ENV = "CODEX_COMPANION_TRANSCRIPT_PATH";
+export const TRANSCRIPT_PATH_ENV = "OLLAMA_COMPANION_TRANSCRIPT_PATH";
 const CLAUDE_PROJECTS_DIR = path.join(os.homedir(), ".claude", "projects");
 
 function resolveUserPath(cwd, value) {

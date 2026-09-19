@@ -222,7 +222,7 @@ test("transfer delegates the current Claude session directly to native import", 
       ...buildEnv(binDir),
       HOME: home,
       CODEX_HOME: path.join(home, ".codex"),
-      CODEX_COMPANION_TRANSCRIPT_PATH: sourcePath
+      OLLAMA_COMPANION_TRANSCRIPT_PATH: sourcePath
     }
   });
 
@@ -559,7 +559,7 @@ test("task-resume-candidate returns the latest rescue thread from the current se
     cwd: workspace,
     env: {
       ...process.env,
-      CODEX_COMPANION_SESSION_ID: "sess-current"
+      OLLAMA_COMPANION_SESSION_ID: "sess-current"
     }
   });
 
@@ -583,11 +583,11 @@ test("task --resume-last does not resume a task from another Claude session", ()
 
   const otherEnv = {
     ...buildEnv(binDir),
-    CODEX_COMPANION_SESSION_ID: "sess-other"
+    OLLAMA_COMPANION_SESSION_ID: "sess-other"
   };
   const currentEnv = {
     ...buildEnv(binDir),
-    CODEX_COMPANION_SESSION_ID: "sess-current"
+    OLLAMA_COMPANION_SESSION_ID: "sess-current"
   };
 
   const firstRun = run("node", [SCRIPT, "task", "initial task"], {
@@ -653,7 +653,7 @@ test("task --resume-last ignores running tasks from other Claude sessions", () =
 
   const env = {
     ...buildEnv(binDir),
-    CODEX_COMPANION_SESSION_ID: "sess-current"
+    OLLAMA_COMPANION_SESSION_ID: "sess-current"
   };
   const status = run("node", [SCRIPT, "status", "--json"], {
     cwd: repo,
@@ -682,7 +682,7 @@ test("session start hook exports the Claude session id, transcript path, and plu
     env: {
       ...process.env,
       CLAUDE_ENV_FILE: envFile,
-      CLAUDE_PLUGIN_DATA: pluginDataDir
+      OLLAMA_COMPANION_DATA: pluginDataDir
     },
     input: JSON.stringify({
       hook_event_name: "SessionStart",
@@ -695,7 +695,7 @@ test("session start hook exports the Claude session id, transcript path, and plu
   assert.equal(result.status, 0, result.stderr);
   assert.equal(
     fs.readFileSync(envFile, "utf8"),
-    `export CODEX_COMPANION_SESSION_ID='sess-current'\nexport CODEX_COMPANION_TRANSCRIPT_PATH='${transcriptPath}'\nexport CLAUDE_PLUGIN_DATA='${pluginDataDir}'\n`
+    `export OLLAMA_COMPANION_SESSION_ID='sess-current'\nexport OLLAMA_COMPANION_TRANSCRIPT_PATH='${transcriptPath}'\nexport OLLAMA_COMPANION_DATA='${pluginDataDir}'\n`
   );
 });
 
@@ -1221,7 +1221,7 @@ test("status without a job id only shows jobs from the current Claude session", 
     cwd: workspace,
     env: {
       ...process.env,
-      CODEX_COMPANION_SESSION_ID: "sess-current"
+      OLLAMA_COMPANION_SESSION_ID: "sess-current"
     }
   });
 
@@ -1503,7 +1503,7 @@ test("result without a job id prefers the latest finished job from the current C
     cwd: workspace,
     env: {
       ...process.env,
-      CODEX_COMPANION_SESSION_ID: "sess-current"
+      OLLAMA_COMPANION_SESSION_ID: "sess-current"
     }
   });
 
@@ -1670,7 +1670,7 @@ test("cancel without a job id ignores active jobs from other Claude sessions", (
 
   const env = {
     ...process.env,
-    CODEX_COMPANION_SESSION_ID: "sess-current"
+    OLLAMA_COMPANION_SESSION_ID: "sess-current"
   };
   const status = run("node", [SCRIPT, "status", "--json"], {
     cwd: workspace,
@@ -1725,7 +1725,7 @@ test("cancel with a job id can still target an active job from another Claude se
 
   const env = {
     ...process.env,
-    CODEX_COMPANION_SESSION_ID: "sess-current"
+    OLLAMA_COMPANION_SESSION_ID: "sess-current"
   };
   const cancel = run("node", [SCRIPT, "cancel", "task-other", "--json"], {
     cwd: workspace,
@@ -1892,7 +1892,7 @@ test("session end fully cleans up jobs for the ending session", async (t) => {
     cwd: repo,
     env: {
       ...process.env,
-      CODEX_COMPANION_SESSION_ID: "sess-current"
+      OLLAMA_COMPANION_SESSION_ID: "sess-current"
     },
     input: JSON.stringify({
       hook_event_name: "SessionEnd",
@@ -1973,7 +1973,7 @@ test("stop hook runs a stop-time review task and blocks on findings when the rev
     cwd: repo,
     env: {
       ...buildEnv(binDir),
-      CODEX_COMPANION_SESSION_ID: "sess-stop-review"
+      OLLAMA_COMPANION_SESSION_ID: "sess-stop-review"
     }
   });
   assert.equal(status.status, 0, status.stderr);
@@ -2025,7 +2025,7 @@ test("stop hook logs running tasks to stderr without blocking when the review ga
     cwd: repo,
     env: {
       ...process.env,
-      CODEX_COMPANION_SESSION_ID: "sess-current"
+      OLLAMA_COMPANION_SESSION_ID: "sess-current"
     },
     input: JSON.stringify({ cwd: repo })
   });

@@ -1,3 +1,4 @@
+// Modified for ollama-plugin-cc (2026): routed to a local Ollama model. Original work Copyright 2026 OpenAI, Apache-2.0.
 import path from "node:path";
 import process from "node:process";
 
@@ -9,7 +10,7 @@ function sanitizePipeName(value) {
 
 export function createBrokerEndpoint(sessionDir, platform = process.platform) {
   if (platform === "win32") {
-    const pipeName = sanitizePipeName(`${path.win32.basename(sessionDir)}-codex-app-server`);
+    const pipeName = sanitizePipeName(`${path.win32.basename(sessionDir)}-ollama-app-server`);
     return `pipe:\\\\.\\pipe\\${pipeName}`;
   }
 

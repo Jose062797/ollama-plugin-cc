@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// Modified for ollama-plugin-cc (2026): routed to a local Ollama model. Original work Copyright 2026 OpenAI, Apache-2.0.
 
 import fs from "node:fs";
 import process from "node:process";
@@ -17,8 +18,16 @@ import { loadState, resolveStateFile, saveState } from "./lib/state.mjs";
 import { TRANSCRIPT_PATH_ENV } from "./lib/claude-session-transfer.mjs";
 import { resolveWorkspaceRoot } from "./lib/workspace.mjs";
 
-export const SESSION_ID_ENV = "CODEX_COMPANION_SESSION_ID";
-const PLUGIN_DATA_ENV = "CLAUDE_PLUGIN_DATA";
+export const SESSION_ID_ENV = "OLLAMA_COMPANION_SESSION_ID";
+const PLUGIN_DATA_ENV = "OLLAMA_COMPANION_DATA";
+
+// ollama-plugin-cc: Claude Code gives each plugin's hooks their own CLAUDE_PLUGIN_DATA.
+// Upstream re-exports that variable to the whole session, where the last plugin to start
+// wins, so two copies of this plugin would share one data folder. Carry ours under a
+// name that only this plugin uses.
+if (!process.env.OLLAMA_COMPANION_DATA && process.env.CLAUDE_PLUGIN_DATA) {
+  process.env.OLLAMA_COMPANION_DATA = process.env.CLAUDE_PLUGIN_DATA;
+}
 
 function readHookInput() {
   const raw = fs.readFileSync(0, "utf8").trim();
